@@ -1,20 +1,40 @@
 
+import "dotenv/config";
 import app from "./app.js";
+import { connectDB, disconnectDB } from "./config/db.js";
 
 const PORT = Number(process.env.PORT) || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`TaskFlow API running on port ${PORT}`);
-});
+let server;
 
-function shutdown(signal) {
-  console.log(`${signal} received. Closing server...`);
+async function startServer() {
+  try {
+    await connectDB();
 
-  server.close(() => {
-    console.log("HTTP server closed");
-    process.exit(0);
-  });
+    server = app.listen(PORT, () => {
+      console.log(`TaskFlow API running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Backend startup failed:", error.message);
+    process.exitCode = 1;
+  }
 }
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+async function shutdown() {
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+
+  await disconnectDB();
+  console.log("Server stopped");
+}
+
+process.on("SIGINT", () => {
+  shutdown().catch(console.error);
+});
+
+process.on("SIGTERM", () => {
+  shutdown().catch(console.error);
+});
+
+startServer();
