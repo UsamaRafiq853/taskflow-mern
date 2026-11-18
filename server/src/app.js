@@ -1,5 +1,7 @@
 
 import express from "express";
+import authRoutes from "./routes/authRoutes.js";
+
 import {
   notFound,
   errorHandler
@@ -7,10 +9,10 @@ import {
 
 const app = express();
 
-// Parse incoming JSON requests
+// Parse JSON requests
 app.use(express.json({ limit: "100kb" }));
 
-// Root endpoint
+// Home endpoint
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Welcome to TaskFlow API",
@@ -19,7 +21,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Health check endpoint
+// Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -27,10 +29,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Handle unknown endpoints
-app.use(notFound);
+// Authentication routes
+app.use("/api/auth", authRoutes);
 
-// Centralized error handler
+// Error handling
+app.use(notFound);
 app.use(errorHandler);
 
 export default app;
