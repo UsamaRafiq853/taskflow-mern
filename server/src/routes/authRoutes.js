@@ -1,18 +1,15 @@
 
 import express from "express";
-
-import { registerUser } from "../controllers/authController.js";
-
+import { registerUser, loginUser } from "../controllers/authController.js";
+import { registerSchema, loginSchema } from "../validators/authValidator.js";
 import { validateRequest } from "../middleware/validateRequest.js";
-
-import { registerSchema } from "../validators/authValidator.js";
 
 const router = express.Router();
 
-router.post(
-  "/register",
-  validateRequest(registerSchema),
-  registerUser
-);
+// Register a new user
+router.post("/register", validateRequest(registerSchema), registerUser);
+
+// Login an existing user
+router.post("/login", validateRequest(loginSchema), loginUser);
 
 export default router;

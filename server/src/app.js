@@ -1,6 +1,9 @@
 
 import express from "express";
+import cookieParser from "cookie-parser";
+
 import authRoutes from "./routes/authRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 
 import {
   notFound,
@@ -9,8 +12,9 @@ import {
 
 const app = express();
 
-// Parse JSON requests
+// Parse JSON requests and cookies
 app.use(express.json({ limit: "100kb" }));
+app.use(cookieParser());
 
 // Home endpoint
 app.get("/", (req, res) => {
@@ -31,6 +35,9 @@ app.get("/api/health", (req, res) => {
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+
+// Protected task routes
+app.use("/api/tasks", taskRoutes);
 
 // Error handling
 app.use(notFound);
