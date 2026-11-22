@@ -6,27 +6,45 @@ import { connectDB, disconnectDB } from "./config/db.js";
 const PORT = Number(process.env.PORT) || 5000;
 
 let server;
+let shuttingDown = false;
 
 async function startServer() {
+  // Start the API even when MongoDB is unavailable.
+  server = app.listen(PORT, () => {
+    console.log(`TaskFlow API running on port ${PORT}`);
+  });
+
+  // Attempt MongoDB connection without stopping the API.
   try {
     await connectDB();
-
-    server = app.listen(PORT, () => {
-      console.log(`TaskFlow API running on port ${PORT}`);
-    });
   } catch (error) {
-    console.error("Backend startup failed:", error.message);
-    process.exitCode = 1;
+    console.error("MongoDB unavailable:", error.message);
+    console.error(
+      "Database-dependent APIs will not work until MongoDB reconnects."
+    );
   }
 }
 
 async function shutdown() {
-  if (server) {
-    await new Promise((resolve) => server.close(resolve));
-  }
+  if (shuttingDown) return;
+  shuttingDown = true;
 
-  await disconnectDB();
-  console.log("Server stopped");
+  try {
+    if (server) {
+      await new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    }
+
+    await disconnectDB();
+    console.log("Server stopped");
+  } catch (error) {
+    console.error("Shutdown failed:", error.message);
+    process.exitCode = 1;
+  }
 }
 
 process.on("SIGINT", () => {
@@ -37,4 +55,7 @@ process.on("SIGTERM", () => {
   shutdown().catch(console.error);
 });
 
-startServer();
+startServer().catch((error) => {
+  console.error("Backend startup failed:", error.message);
+  process.exitCode = 1;
+});
