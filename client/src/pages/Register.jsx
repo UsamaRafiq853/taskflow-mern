@@ -88,7 +88,7 @@ export default function Register() {
           type="password"
           value={form.password}
           onChange={handleChange}
-          minLength={8}
+          minLength={6}
           required
         />
 

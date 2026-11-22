@@ -9,7 +9,7 @@ export const registerSchema = z.strictObject({
     .transform((email) => email.toLowerCase()),
 
   password: z.string()
-    .min(12, "Password must be at least 12 characters")
+    .min(6, "Password must be at least 6 characters")
     .max(128, "Password is too long")
 });
 
