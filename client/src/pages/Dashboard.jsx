@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function apiRequest(path, options = {}) {
     const response = await fetch(path, {
@@ -47,6 +48,7 @@ export default function Dashboard() {
   async function loadTasks() {
     try {
       setError("");
+
       const data = await apiRequest("/api/tasks");
       setTasks(data.tasks || []);
     } catch (err) {
@@ -138,6 +140,36 @@ export default function Dashboard() {
     }
   }
 
+  // Logout user and clear JWT cookie
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed. Please try again.");
+      }
+
+      // Clear task data from the current session
+      setTasks([]);
+      setForm(emptyForm);
+      setEditingId(null);
+
+      navigate("/login", { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
   return (
     <main className="dashboard">
       <header className="dashboard-header">
@@ -145,9 +177,10 @@ export default function Dashboard() {
 
         <button
           type="button"
-          onClick={() => navigate("/login")}
+          onClick={handleLogout}
+          disabled={loggingOut}
         >
-          Logout
+          {loggingOut ? "Logging out..." : "Logout"}
         </button>
       </header>
 
@@ -169,7 +202,9 @@ export default function Dashboard() {
             {editingId ? "Edit Task" : "Create Task"}
           </h3>
 
-          <label htmlFor="title">Task Title</label>
+          <label htmlFor="title">
+            Task Title
+          </label>
           <input
             id="title"
             name="title"
@@ -191,14 +226,18 @@ export default function Dashboard() {
             maxLength={2000}
           />
 
-          <label htmlFor="status">Status</label>
+          <label htmlFor="status">
+            Status
+          </label>
           <select
             id="status"
             name="status"
             value={form.status}
             onChange={handleChange}
           >
-            <option value="todo">To Do</option>
+            <option value="todo">
+              To Do
+            </option>
             <option value="in_progress">
               In Progress
             </option>
@@ -216,9 +255,15 @@ export default function Dashboard() {
             value={form.priority}
             onChange={handleChange}
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="low">
+              Low
+            </option>
+            <option value="medium">
+              Medium
+            </option>
+            <option value="high">
+              High
+            </option>
           </select>
 
           <label htmlFor="dueDate">
@@ -279,7 +324,9 @@ export default function Dashboard() {
                   Status: {task.status.replace("_", " ")}
                 </p>
 
-                <p>Priority: {task.priority}</p>
+                <p>
+                  Priority: {task.priority}
+                </p>
 
                 <p>
                   Due:{" "}

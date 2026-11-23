@@ -8,6 +8,7 @@ export const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
+    // Check if email is already registered
     const existingUser = await User.exists({ email });
 
     if (existingUser) {
@@ -17,6 +18,7 @@ export const registerUser = async (req, res, next) => {
       });
     }
 
+    // Hash password before saving
     const passwordHash = await argon2.hash(password, {
       type: argon2.argon2id
     });
@@ -55,6 +57,7 @@ export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    // Find user and include hashed password
     const user = await User.findOne({
       email: email.toLowerCase().trim()
     }).select("+passwordHash");
@@ -66,6 +69,7 @@ export const loginUser = async (req, res, next) => {
       });
     }
 
+    // Verify password
     const validPassword = await argon2.verify(
       user.passwordHash,
       password
@@ -82,6 +86,7 @@ export const loginUser = async (req, res, next) => {
       throw new Error("JWT_SECRET is not configured");
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       {
         userId: user._id.toString(),
@@ -94,10 +99,12 @@ export const loginUser = async (req, res, next) => {
       }
     );
 
+    // Store JWT in HttpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      path: "/",
       maxAge: 60 * 60 * 1000
     });
 
@@ -114,4 +121,20 @@ export const loginUser = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+// Logout user
+export const logoutUser = (req, res) => {
+  // Clear the authentication cookie
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/"
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully"
+  });
 };
