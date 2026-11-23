@@ -12,6 +12,7 @@ const emptyForm = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+
   const [tasks, setTasks] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -61,7 +62,11 @@ export default function Dashboard() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((previous) => ({ ...previous, [name]: value }));
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value
+    }));
   }
 
   async function handleSubmit(event) {
@@ -72,11 +77,17 @@ export default function Dashboard() {
     try {
       const payload = {
         ...form,
-        dueDate: form.dueDate || null
+        dueDate: form.dueDate
+          ? new Date(
+              `${form.dueDate}T00:00:00.000Z`
+            ).toISOString()
+          : null
       };
 
       await apiRequest(
-        editingId ? `/api/tasks/${editingId}` : "/api/tasks",
+        editingId
+          ? `/api/tasks/${editingId}`
+          : "/api/tasks",
         {
           method: editingId ? "PUT" : "POST",
           body: JSON.stringify(payload)
@@ -85,6 +96,7 @@ export default function Dashboard() {
 
       setForm(emptyForm);
       setEditingId(null);
+
       await loadTasks();
     } catch (err) {
       setError(err.message);
@@ -95,22 +107,31 @@ export default function Dashboard() {
 
   function editTask(task) {
     setEditingId(task._id);
+
     setForm({
       title: task.title,
       description: task.description || "",
       status: task.status,
       priority: task.priority,
-      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ""
+      dueDate: task.dueDate
+        ? task.dueDate.slice(0, 10)
+        : ""
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
   }
 
   async function deleteTask(id) {
     if (!window.confirm("Delete this task?")) return;
 
     try {
-      await apiRequest(`/api/tasks/${id}`, { method: "DELETE" });
+      await apiRequest(`/api/tasks/${id}`, {
+        method: "DELETE"
+      });
+
       await loadTasks();
     } catch (err) {
       setError(err.message);
@@ -121,6 +142,7 @@ export default function Dashboard() {
     <main className="dashboard">
       <header className="dashboard-header">
         <h1>TaskFlow</h1>
+
         <button
           type="button"
           onClick={() => navigate("/login")}
@@ -133,10 +155,19 @@ export default function Dashboard() {
         <h2>My Tasks</h2>
         <p>Organize and track your daily work.</p>
 
-        {error && <p className="error" role="alert">{error}</p>}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
 
-        <form className="task-form" onSubmit={handleSubmit}>
-          <h3>{editingId ? "Edit Task" : "Create Task"}</h3>
+        <form
+          className="task-form"
+          onSubmit={handleSubmit}
+        >
+          <h3>
+            {editingId ? "Edit Task" : "Create Task"}
+          </h3>
 
           <label htmlFor="title">Task Title</label>
           <input
@@ -149,7 +180,9 @@ export default function Dashboard() {
             required
           />
 
-          <label htmlFor="description">Description</label>
+          <label htmlFor="description">
+            Description
+          </label>
           <textarea
             id="description"
             name="description"
@@ -166,11 +199,17 @@ export default function Dashboard() {
             onChange={handleChange}
           >
             <option value="todo">To Do</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
+            <option value="in_progress">
+              In Progress
+            </option>
+            <option value="completed">
+              Completed
+            </option>
           </select>
 
-          <label htmlFor="priority">Priority</label>
+          <label htmlFor="priority">
+            Priority
+          </label>
           <select
             id="priority"
             name="priority"
@@ -182,7 +221,9 @@ export default function Dashboard() {
             <option value="high">High</option>
           </select>
 
-          <label htmlFor="dueDate">Due Date</label>
+          <label htmlFor="dueDate">
+            Due Date
+          </label>
           <input
             id="dueDate"
             name="dueDate"
@@ -191,8 +232,15 @@ export default function Dashboard() {
             onChange={handleChange}
           />
 
-          <button type="submit" disabled={saving}>
-            {saving ? "Saving..." : editingId ? "Update Task" : "Add Task"}
+          <button
+            type="submit"
+            disabled={saving}
+          >
+            {saving
+              ? "Saving..."
+              : editingId
+                ? "Update Task"
+                : "Add Task"}
           </button>
 
           {editingId && (
@@ -214,23 +262,45 @@ export default function Dashboard() {
           {loading ? (
             <p>Loading tasks...</p>
           ) : tasks.length === 0 ? (
-            <p>No tasks found. Create your first task.</p>
+            <p>
+              No tasks found. Create your first task.
+            </p>
           ) : (
             tasks.map((task) => (
-              <article className="task-card" key={task._id}>
+              <article
+                className="task-card"
+                key={task._id}
+              >
                 <h4>{task.title}</h4>
+
                 <p>{task.description}</p>
-                <p>Status: {task.status.replace("_", " ")}</p>
-                <p>Priority: {task.priority}</p>
+
                 <p>
-                  Due: {task.dueDate
-                    ? new Date(task.dueDate).toLocaleDateString()
+                  Status: {task.status.replace("_", " ")}
+                </p>
+
+                <p>Priority: {task.priority}</p>
+
+                <p>
+                  Due:{" "}
+                  {task.dueDate
+                    ? new Date(
+                        task.dueDate
+                      ).toLocaleDateString()
                     : "Not set"}
                 </p>
-                <button type="button" onClick={() => editTask(task)}>
+
+                <button
+                  type="button"
+                  onClick={() => editTask(task)}
+                >
                   Edit
                 </button>
-                <button type="button" onClick={() => deleteTask(task._id)}>
+
+                <button
+                  type="button"
+                  onClick={() => deleteTask(task._id)}
+                >
                   Delete
                 </button>
               </article>
