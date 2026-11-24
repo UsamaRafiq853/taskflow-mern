@@ -90,6 +90,3 @@ I have mentioned these resources to acknowledge the help I received.
 Author:
 20102497 - Muhammad Usama Rafiq 
 B9IS130 - Web Development for Information Systems
-
-Cloud deployment
-
